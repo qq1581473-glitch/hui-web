@@ -1,0 +1,13 @@
+{
+  "name": "hui-web",
+  "version": "1.0.0",
+  "description": "Web chat with Hui",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "express": "^4.21.0"
+  }
+}

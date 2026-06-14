@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>惠</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --green: #07c160;
+    --green-dark: #06ad56;
+    --bg: #ededed;
+    --header: #2e2e2e;
+    --white: #fff;
+    --text: #333;
+    --gray: #999;
+    --light-gray: #f5f5f5;
+    --border: #e6e6e6;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* 桌面端加阴影 */
+  @media (min-width: 481px) {
+    body {
+      box-shadow: 0 0 30px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      margin: 20px auto;
+      height: calc(100vh - 40px);
+    }
+  }
+
+  /* 顶部栏 */
+  .header {
+    background: var(--header);
+    color: white;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .header-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+
+  .header-actions {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    gap: 12px;
+  }
+
+  .header-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .header-btn:hover { color: white; }
+
+  /* 设置面板 */
+  .settings-panel {
+    position: absolute;
+    top: 0;
+    right: -320px;
+    width: 300px;
+    height: 100%;
+    background: white;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+    z-index: 100;
+    transition: right 0.3s ease;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .settings-panel.open { right: 0; }
+
+  .settings-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 99;
+    display: none;
+  }
+
+  .settings-overlay.show { display: block; }
+
+  .settings-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .settings-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    align-self: flex-end;
+    color: var(--gray);
+  }
+
+  .settings-label {
+    font-size: 13px;
+    color: var(--gray);
+  }
+
+  .settings-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border 0.2s;
+  }
+
+  .settings-input:focus {
+    border-color: var(--green);
+  }
+
+  .settings-status {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+  }
+
+  .settings-status.ok {
+    background: #e8f8ee;
+    color: var(--green);
+  }
+
+  .settings-status.err {
+    background: #fde8e8;
+    color: #e34;
+  }
+
+  .settings-hint {
+    font-size: 12px;
+    color: var(--gray);
+    line-height: 1.5;
+  }
+
+  .settings-save {
+    background: var(--green);
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .settings-save:hover { background: var(--green-dark); }
+
+  /* 聊天区域 */
+  .chat-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .message {
+    display: flex;
+    gap: 10px;
+    max-width: 85%;
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .message.user { align-self: flex-end; flex-direction: row-reverse; }
+  .message.hui { align-self: flex-start; }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .message.user .avatar {
+    background: var(--green);
+    color: white;
+    order: 1;
+  }
+
+  .message.hui .avatar {
+    background: #ffd1b3;
+    color: #8b5e3c;
+  }
+
+  .bubble {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 15px;
+    line-height: 1.6;
+    word-break: break-word;
+    white-space: pre-wrap;
+    position: relative;
+  }
+
+  .message.user .bubble {
+    background: var(--green);
+    color: white;
+    border-top-right-radius: 2px;
+  }
+
+  .message.hui .bubble {
+    background: white;
+    color: var(--text);
+    border-top-left-radius: 2px;
+  }
+
+  .typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 8px 4px;
+  }
+
+  .typing-indicator span {
+    width: 7px;
+    height: 7px;
+    background: var(--gray);
+    border-radius: 50%;
+    animation: typing 1.2s infinite;
+  }
+
+  .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typing {
+    0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-4px); }
+  }
+
+  /* 输入区域 */
+  .input-area {
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 8px 12px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .input-area textarea {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    padding: 8px 4px;
+    max-height: 100px;
+    resize: none;
+    font-family: inherit;
+    line-height: 1.5;
+  }
+
+  .input-area textarea::placeholder {
+    color: #bbb;
+  }
+
+  .send-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--green);
+    color: white;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .send-btn:active { transform: scale(0.92); }
+  .send-btn:hover { background: var(--green-dark); }
+  .send-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* 空状态 */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray);
+    gap: 8px;
+  }
+
+  .empty-state .emoji { font-size: 56px; }
+  .empty-state .text { font-size: 14px; }
+  .empty-state .hint { font-size: 12px; color: #ccc; }
+
+  /* 消息时间 */
+  .msg-time {
+    font-size: 11px;
+    color: var(--gray);
+    text-align: center;
+    margin: 4px 0;
+  }
+
+  /* 错误提示 */
+  .error-bar {
+    background: #fde8e8;
+    color: #e34;
+    font-size: 13px;
+    padding: 8px 16px;
+    text-align: center;
+    display: none;
+    flex-shrink: 0;
+  }
+
+  .error-bar.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- 顶部栏 -->
+<div class="header">
+  <div class="header-title">惠</div>
+  <div class="header-actions">
+    <button class="header-btn" onclick="clearChat()" title="清空对话">🗑️</button>
+    <button class="header-btn" onclick="toggleSettings()" title="设置">⚙️</button>
+  </div>
+</div>
+
+<!-- 错误提示 -->
+<div class="error-bar" id="errorBar"></div>
+
+<!-- 设置面板 -->
+<div class="settings-overlay" id="settingsOverlay" onclick="toggleSettings()"></div>
+<div class="settings-panel" id="settingsPanel">
+  <button class="settings-close" onclick="toggleSettings()">✕</button>
+  <div class="settings-title">设置</div>
+  <label class="settings-label">Anthropic API Key</label>
+  <input class="settings-input" id="apiKeyInput" type="password" placeholder="sk-ant-..." />
+  <div class="settings-hint">
+    在 <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> 获取 API Key。
+    不设置也可以在启动时传入环境变量 <code>ANTHROPIC_API_KEY</code>。
+  </div>
+  <button class="settings-save" onclick="saveApiKey()">保存</button>
+  <div id="keyStatus"></div>
+</div>
+
+<!-- 聊天区域 -->
+<div class="chat-area" id="chatArea">
+  <div class="empty-state" id="emptyState">
+    <div class="emoji">🌸</div>
+    <div class="text">和惠说点什么吧</div>
+    <div class="hint">她正安静地等着你</div>
+  </div>
+</div>
+
+<!-- 输入区域 -->
+<div class="input-area">
+  <textarea id="input" rows="1" placeholder="输入消息..." onkeydown="onKeyDown(event)" oninput="autoResize(this)"></textarea>
+  <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+</div>
+
+<script>
+let history = [];
+let isSending = false;
+let apiKey = localStorage.getItem('hui_api_key') || '';
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('input');
+  if (apiKey) document.getElementById('apiKeyInput').value = apiKey;
+  updateKeyStatus();
+  // 移动端自动聚焦
+  setTimeout(() => input.focus(), 500);
+});
+
+// 设置面板
+function toggleSettings() {
+  document.getElementById('settingsPanel').classList.toggle('open');
+  document.getElementById('settingsOverlay').classList.toggle('show');
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) {
+    showError('请输入 API Key');
+    return;
+  }
+  apiKey = key;
+  localStorage.setItem('hui_api_key', key);
+  updateKeyStatus();
+  setTimeout(() => toggleSettings(), 800);
+}
+
+function updateKeyStatus() {
+  const el = document.getElementById('keyStatus');
+  if (apiKey && apiKey.startsWith('sk-ant-')) {
+    el.innerHTML = '<div class="settings-status ok">✅ API Key 已配置</div>';
+    document.getElementById('apiKeyInput').value = apiKey;
+  } else if (apiKey) {
+    el.innerHTML = '<div class="settings-status err">❌ Key 格式不正确（应以 sk-ant- 开头）</div>';
+  }
+}
+
+// 发送消息
+async function sendMessage() {
+  const input = document.getElementById('input');
+  const msg = input.value.trim();
+  if (!msg || isSending) return;
+
+  input.value = '';
+  autoResize(input);
+  hideError();
+
+  // 隐藏空状态
+  document.getElementById('emptyState').style.display = 'none';
+
+  // 添加用户消息
+  addMessage(msg, 'user');
+  history.push({ role: 'user', content: msg });
+
+  // 显示"正在输入"
+  showTyping();
+
+  isSending = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: msg,
+        history: history.slice(-20),
+        apiKey: apiKey || undefined
+      })
+    });
+
+    const data = await res.json();
+    removeTyping();
+
+    if (data.needKey) {
+      addMessage(data.reply, 'hui');
+      if (!apiKey) toggleSettings();
+      return;
+    }
+
+    addMessage(data.reply, 'hui');
+    history.push({ role: 'assistant', content: data.reply });
+
+  } catch (err) {
+    removeTyping();
+    addMessage('……（她没有回答）', 'hui');
+    showError('网络出了点问题');
+  } finally {
+    isSending = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('input').focus();
+  }
+}
+
+// 添加消息气泡
+function addMessage(text, role) {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+
+  const time = new Date();
+  const timeStr = `${time.getHours().toString().padStart(2,'0')}:${time.getMinutes().toString().padStart(2,'0')}`;
+
+  div.innerHTML = `
+    <div class="avatar">${role === 'hui' ? '惠' : '我'}</div>
+    <div class="bubble">${escapeHtml(text)}</div>
+  `;
+
+  area.appendChild(div);
+  scrollToBottom();
+}
+
+// 打字指示器
+function showTyping() {
+  const area = document.getElementById('chatArea');
+  const div = document.createElement('div');
+  div.className = 'message hui';
+  div.id = 'typingIndicator';
+  div.innerHTML = `
+    <div class="avatar">惠</div>
+    <div class="bubble">
+      <div class="typing-indicator">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  `;
+  area.appendChild(div);
+  scrollToBottom();
+}
+
+function removeTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+// SSE — 接收惠的主动消息
+function connectSSE() {
+  const evtSource = new EventSource('/api/events');
+  evtSource.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'proactive') {
+        document.getElementById('emptyState').style.display = 'none';
+        addMessage(data.text, 'hui');
+        history.push({ role: 'assistant', content: data.text });
+        // 如果有通知权限，发桌面通知
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('惠', { body: data.text });
+        }
+      }
+    } catch {}
+  };
+  evtSource.onerror = () => {
+    // 断线自动重连，不需要处理
+  };
+}
+connectSSE();
+
+// 请求通知权限（可选）
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+// 清空对话
+function clearChat() {
+  if (!confirm('清空所有对话记录？')) return;
+  history = [];
+  document.getElementById('chatArea').innerHTML = `
+    <div class="empty-state" id="emptyState">
+      <div class="emoji">🌸</div>
+      <div class="text">和惠说点什么吧</div>
+      <div class="hint">她正安静地等着你</div>
+    </div>
+  `;
+}
+
+// 工具函数
+function onKeyDown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+}
+
+function scrollToBottom() {
+  const area = document.getElementById('chatArea');
+  setTimeout(() => { area.scrollTop = area.scrollHeight; }, 50);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function showError(msg) {
+  const bar = document.getElementById('errorBar');
+  bar.textContent = msg;
+  bar.classList.add('show');
+}
+
+function hideError() {
+  document.getElementById('errorBar').classList.remove('show');
+}
+</script>
+</body>
+</html>
