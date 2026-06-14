@@ -7,5 +7,5 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: ANTHROPIC_API_KEY
+      - key: DEEPSEEK_API_KEY
         sync: false

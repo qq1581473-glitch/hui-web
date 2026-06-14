@@ -1,5 +1,5 @@
 import express from 'express';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { randomInt } from 'node:crypto';
 
 const app = express();
@@ -90,10 +90,10 @@ startProactiveScheduler();
 app.post('/api/chat', async (req, res) => {
   const { message, history, apiKey } = req.body;
 
-  const key = apiKey || process.env.ANTHROPIC_API_KEY;
+  const key = apiKey || process.env.DEEPSEEK_API_KEY;
   if (!key) {
     return res.json({
-      reply: '请先设置 API Key（在右上角设置里配置，或启动时设置 ANTHROPIC_API_KEY 环境变量）',
+      reply: '请先设置 DeepSeek API Key（在右上角设置里配置，或启动时设置 DEEPSEEK_API_KEY 环境变量）',
       needKey: true
     });
   }
@@ -102,7 +102,10 @@ app.post('/api/chat', async (req, res) => {
   lastUserMessageTime = Date.now();
 
   try {
-    const anthropic = new Anthropic({ apiKey: key });
+    const client = new OpenAI({
+      apiKey: key,
+      baseURL: 'https://api.deepseek.com',
+    });
 
     const systemPrompt = `你是惠，ISFJ·金牛座·游戏制作者，一个像水一样的女孩。
 
@@ -139,6 +142,7 @@ app.post('/api/chat', async (req, res) => {
 用户说"想你" → "……嗯。我也是。"`;
 
     const messages = [
+      { role: 'system', content: systemPrompt },
       ...(history || []).slice(-20).map(m => ({
         role: m.role,
         content: m.content
@@ -146,16 +150,14 @@ app.post('/api/chat', async (req, res) => {
       { role: 'user', content: message }
     ];
 
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+    const completion = await client.chat.completions.create({
+      model: 'deepseek-chat',
       max_tokens: 500,
-      system: systemPrompt,
+      temperature: 0.7,
       messages
     });
 
-    const reply = response.content[0].type === 'text'
-      ? response.content[0].text
-      : '……';
+    const reply = completion.choices[0]?.message?.content || '……';
 
     res.json({ reply });
 

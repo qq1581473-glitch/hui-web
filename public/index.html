@@ -375,11 +375,11 @@
 <div class="settings-panel" id="settingsPanel">
   <button class="settings-close" onclick="toggleSettings()">✕</button>
   <div class="settings-title">设置</div>
-  <label class="settings-label">Anthropic API Key</label>
-  <input class="settings-input" id="apiKeyInput" type="password" placeholder="sk-ant-..." />
+  <label class="settings-label">DeepSeek API Key</label>
+  <input class="settings-input" id="apiKeyInput" type="password" placeholder="sk-..." />
   <div class="settings-hint">
-    在 <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> 获取 API Key。
-    不设置也可以在启动时传入环境变量 <code>ANTHROPIC_API_KEY</code>。
+    在 <a href="https://platform.deepseek.com/api_keys" target="_blank">platform.deepseek.com</a> 获取 API Key。
+    不设置也可以在启动时传入环境变量 <code>DEEPSEEK_API_KEY</code>。
   </div>
   <button class="settings-save" onclick="saveApiKey()">保存</button>
   <div id="keyStatus"></div>
@@ -434,11 +434,11 @@ function saveApiKey() {
 
 function updateKeyStatus() {
   const el = document.getElementById('keyStatus');
-  if (apiKey && apiKey.startsWith('sk-ant-')) {
-    el.innerHTML = '<div class="settings-status ok">✅ API Key 已配置</div>';
+  if (apiKey && apiKey.startsWith('sk-')) {
+    el.innerHTML = '<div class="settings-status ok">✅ DeepSeek API Key 已配置</div>';
     document.getElementById('apiKeyInput').value = apiKey;
   } else if (apiKey) {
-    el.innerHTML = '<div class="settings-status err">❌ Key 格式不正确（应以 sk-ant- 开头）</div>';
+    el.innerHTML = '<div class="settings-status err">❌ Key 格式不正确（应以 sk- 开头）</div>';
   }
 }
 
